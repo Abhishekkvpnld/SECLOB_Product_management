@@ -6,29 +6,111 @@ import Pagination from "../components/Pagination";
 import AddSubCategoryPopup from "../components/SubCategory";
 import AddCategoryPopup from "../components/AddCategory";
 import AddProductPopup from "../components/AddProduct";
+import axios from "axios";
+import { allSubCategory_api, fetchAllProduct_api } from "../utils/api";
+import { useEffect } from "react";
 
 
 const Home = () => {
 
   const [favorites, setFavorites] = useState(new Set());
-  const [isLaptopOpen, setIsLaptopOpen] = useState(true);
+  const [openCategories, setOpenCategories] = useState({});
   const [addProduct, setAddProduct] = useState(false);
   const [addCategory, setAddCategory] = useState(false);
   const [addSubCategory, setAddSubCategory] = useState(false);
+  const [allProducts, setAllProducts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [updatedList, setUpdatedList] = useState(allProducts);
+  const [groupedCategories, setGroupedCategories] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1)
 
 
-  const products = [
-    { id: 1, name: 'HP AMD Ryzen 3', price: '$529.99', rating: 4 },
-    { id: 2, name: 'HP AMD Ryzen 3', price: '$529.99', rating: 4 },
-    { id: 3, name: 'HP AMD Ryzen 3', price: '$529.99', rating: 4 },
-    { id: 4, name: 'HP AMD Ryzen 3', price: '$529.99', rating: 4 },
-    { id: 5, name: 'HP AMD Ryzen 3', price: '$529.99', rating: 4 },
-    { id: 6, name: 'HP AMD Ryzen 3', price: '$529.99', rating: 4 },
-  ];
+
+  const fetchAllProducts = async () => {
+    try {
+      const res = await axios.get(fetchAllProduct_api, { withCredentials: true });
+      if (res?.data?.success) {
+        setAllProducts(res?.data?.data)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  };
+
+
+  const groupByCategory = (subCategories) => {
+    const grouped = {};
+
+    subCategories.forEach((sub) => {
+      const catId = sub.category._id;
+      const catName = sub.category.categoryName;
+
+      if (!grouped[catId]) {
+        grouped[catId] = {
+          categoryId: catId,
+          categoryName: catName,
+          subCategories: [],
+        };
+      }
+
+      grouped[catId].subCategories.push({
+        _id: sub._id,
+        subCategory: sub.subCategory,
+      });
+    });
+
+    return Object.values(grouped);
+  };
+
+
+
+  const fetchAllSubCategory = async () => {
+    try {
+      const res = await axios.get(allSubCategory_api, { withCredentials: true });
+      if (res?.data?.success) {
+        let grouped = groupByCategory(res?.data?.data);
+        setGroupedCategories(grouped);
+
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  };
+
+
+  const toggleCategory = (categoryId) => {
+    setOpenCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
+
+  useEffect(() => {
+    fetchAllProducts();
+    fetchAllSubCategory();
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery) {
+      const searchProducts = allProducts.filter((product) =>
+        product?.productName?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setUpdatedList(searchProducts);
+    } else {
+      setUpdatedList(allProducts);
+    }
+  }, [searchQuery, allProducts]);
+
+
+  const pageSize = 6;
+  const totalPages = Math.ceil(updatedList?.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
 
   return (
     <div>
-      <Navbar />
+      <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
@@ -67,32 +149,32 @@ const Home = () => {
                 All Categories
               </div>
 
-              <div>
-                <div
-                  className="flex items-center justify-between text-sm font-medium text-gray-900 cursor-pointer hover:text-gray-700"
-                  onClick={() => setIsLaptopOpen(!isLaptopOpen)}
-                >
-                  <span>Laptop</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${isLaptopOpen ? 'rotate-180' : ''}`} />
-                </div>
-
-                {isLaptopOpen && (
-                  <div className="ml-4 mt-2 space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-gray-800 rounded-sm"></div>
-                      <span className="text-sm text-gray-600">HP</span>
-                    </div>
-                    <div className="text-sm text-gray-600 ml-6 hover:text-gray-800 cursor-pointer">
-                      Dell
-                    </div>
-
-                    <div className="text-sm text-gray-600 ml-6 hover:text-gray-800 cursor-pointer">
-                      Tablet
-                    </div>
+              {groupedCategories?.map((el, index) => (
+                <div key={index}>
+                  <div
+                    className="flex items-center justify-between text-sm font-medium text-gray-900 cursor-pointer hover:text-gray-700"
+                    onClick={() => toggleCategory(el.categoryId)}
+                  >
+                    <span>{el?.categoryName}</span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${openCategories[el.categoryId] ? 'rotate-180' : ''
+                        }`}
+                    />
                   </div>
 
-                )}
-              </div>
+                  {openCategories[el?.categoryId] && (
+                    <div className="ml-4 mt-2 space-y-2">
+                      {el?.subCategories?.map((sub, i) => (
+                        <div key={i} className="flex items-center space-x-2">
+                          <div className="w-4 h-4 bg-gray-800 rounded-sm"></div>
+                          <span className="text-sm text-gray-600">{sub?.subCategory}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
 
             </div>
           </div>
@@ -100,20 +182,22 @@ const Home = () => {
           {/* Main Content */}
           <div className="flex-1">
             {/* Product Grid */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              {products.map((product) => (
-                <ProductCard product={product} key={product.id} setFavorites={setFavorites} favorites={favorites} />
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+              {updatedList?.slice(startIndex, endIndex).map((product) => (
+                <ProductCard product={product} key={product._id} setFavorites={setFavorites} favorites={favorites} />
               ))}
             </div>
 
             {/* Pagination */}
-            <Pagination />
+            <Pagination setCurrentPage={setCurrentPage} currentPage={currentPage} totalPages={totalPages} />
 
           </div>
         </div>
       </div>
 
 
+
+      {/* Popup windows */}
       {addSubCategory && <AddSubCategoryPopup setIsOpen={setAddSubCategory} />}
       {addCategory && <AddCategoryPopup setIsOpen={setAddCategory} />}
       {addProduct && <AddProductPopup isOpen={addProduct} setIsOpen={setAddProduct} />}

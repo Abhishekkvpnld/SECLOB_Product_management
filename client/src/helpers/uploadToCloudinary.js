@@ -9,8 +9,6 @@ const uploadImageToCloudinary = async (image) => {
   formData.append("folder", "seclob_product_images");
 
   const response = await axios.post(url, formData);
-
-  console.log(response?.data);
   return response?.data;
 };
 

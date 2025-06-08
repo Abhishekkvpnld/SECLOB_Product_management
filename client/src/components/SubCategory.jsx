@@ -6,6 +6,7 @@ import { addSubCategory_api, allCategory_api } from '../utils/api';
 
 
 const AddSubCategoryPopup = ({ setIsOpen }) => {
+
     const [selectedCategory, setSelectedCategory] = useState('');
     const [subCategoryName, setSubCategoryName] = useState('');
     const [categories, setCategories] = useState([]);
@@ -22,9 +23,6 @@ const AddSubCategoryPopup = ({ setIsOpen }) => {
         }
     };
 
-    useEffect(() => {
-        fetchCategory();
-    }, []);
 
     const handleCategorySelect = (value) => {
         setSelectedCategory(value);
@@ -61,6 +59,11 @@ const AddSubCategoryPopup = ({ setIsOpen }) => {
         setSubCategoryName('');
         setIsOpen(false);
     };
+
+    useEffect(() => {
+        fetchCategory();
+    }, []);
+
 
     return (
         <div className="fixed inset-0 bg-blue-50/80 flex items-center justify-center p-4 z-50">

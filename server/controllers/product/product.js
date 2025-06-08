@@ -1,6 +1,7 @@
 import Category from "../../models/categoryModel.js";
 import SubCategory from "../../models/subCategory.js";
 import Product from "../../models/Product.Model.js";
+import Favorite from "../../models/favoriteModel.js";
 
 // Add a new category
 export const addCategory = async (req, res) => {
@@ -97,7 +98,9 @@ export const addSubCategory = async (req, res) => {
 export const addProduct = async (req, res) => {
   try {
     const { title, subCategory, description, variants, images } = req.body;
-    const userID = req?.user?.id;
+    const userId = req?.user?.id;
+
+    if (!userId) throw new Error("Please login first...");
 
     // Validation
     if (!title || !subCategory || !description || !variants) {
@@ -125,7 +128,7 @@ export const addProduct = async (req, res) => {
       description,
       variants: formattedVariants,
       images: images || [],
-      user: userID,
+      user: userId,
       category: subCategoryCheck?.category,
     });
 
@@ -203,7 +206,7 @@ export const getAllProducts = async (req, res) => {
 
     res.status(200).json({
       message: "All products fetched successfully.",
-      products,
+      data: products,
       success: true,
       error: false,
     });
@@ -213,6 +216,153 @@ export const getAllProducts = async (req, res) => {
       message: error?.message || "Something went wrong",
       success: false,
       error: true,
+    });
+  }
+};
+
+export const getProduct = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    if (!productId) throw new Error("Product not found...");
+
+    const product = await Product.findById(productId);
+
+    if (!product) throw new Error("product not found...❌");
+
+    res.status(200).json({
+      message: "All products fetched successfully.",
+      data: product,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({
+      message: error?.message || "Something went wrong",
+      success: false,
+      error: true,
+    });
+  }
+};
+
+// Toggle favorite product for a user
+export const toggleFavorite = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    const userId = req?.user?.id;
+
+    if (!userId || !productId) {
+      return res
+        .status(400)
+        .json({ message: "UserId and ProductId are required." });
+    }
+
+    // Check if this favorite already exists
+    const existing = await Favorite.findOne({ userId, productId });
+
+    if (existing) {
+      // If exists, remove (unfavorite)
+      await Favorite.findOneAndDelete({ productId, userId });
+      return res.status(200).json({
+        message: "Removed from favorites",
+        success: true,
+        error: false,
+      });
+    }
+
+    // If not exists, add to favorites
+    const newFavorite = new Favorite({ userId, productId });
+    await newFavorite.save();
+
+    const allFavProducts = await Favorite.find({ userId });
+
+    res.status(201).json({
+      message: "Added to favorites",
+      success: true,
+      error: false,
+      data: allFavProducts,
+    });
+  } catch (error) {
+    console.error("Error toggling favorite:", error);
+    res
+      .status(500)
+      .json({ message: "Server Error", success: true, error: false });
+  }
+};
+
+export const favoriteProducts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!userId) {
+      return res.status(400).json({ message: "Please login first..." });
+    }
+
+    const allFavProducts = await Favorite.find({ userId });
+
+    res.status(200).json({
+      message: "Added to favorites",
+      success: true,
+      error: false,
+      data: allFavProducts,
+    });
+  } catch (error) {
+    console.error("Error toggling favorite:", error);
+    res
+      .status(500)
+      .json({ message: "Server Error", success: true, error: false });
+  }
+};
+
+export const allFavProducts = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Please login first...",
+        success: false,
+        error: true,
+      });
+    }
+
+    const allFavProducts = await Favorite.find({ userId }).populate(
+      "productId"
+    );
+
+    res.status(200).json({
+      message: "Favorite products fetched successfully",
+      success: true,
+      error: false,
+      data: allFavProducts,
+    });
+  } catch (error) {
+    console.error("Error fetching favorite products:", error);
+    res
+      .status(500)
+      .json({ message: "Server Error", success: false, error: true });
+  }
+};
+
+export const getAllSubCategories = async (req, res) => {
+  try {
+    const subCategories = await SubCategory.find().populate(
+      "category",
+      "categoryName"
+    );
+
+    res.status(200).json({
+      success: true,
+      error: false,
+      message: "Fetched all subcategories",
+      data: subCategories,
+    });
+  } catch (error) {
+    console.error("Error fetching subcategories:", error);
+    res.status(500).json({
+      error: true,
+      success: false,
+      message: "Server error while fetching subcategories",
     });
   }
 };

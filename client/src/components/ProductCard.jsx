@@ -1,25 +1,36 @@
-import { Heart,Star } from 'lucide-react';
+import axios from 'axios';
+import { Heart, Star } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { favoriteToggle_api } from '../utils/api';
 
 const ProductCard = ({ favorites, product, setFavorites }) => {
 
     const navigate = useNavigate();
 
-
     //Toggle Favorites list handler
-    const toggleFavorite = (productId) => {
+    const toggleFavorite = async (productId) => {
         const newFavorites = new Set(favorites);
         if (newFavorites.has(productId)) {
             newFavorites.delete(productId);
         } else {
             newFavorites.add(productId);
         }
+        
         setFavorites(newFavorites);
+        try {
+            const res = await axios.post(favoriteToggle_api, { productId }, { withCredentials: true })
+            if (res?.data?.success) {
+                toast.success(res?.data?.message)
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message)
+        }
     };
 
 
     //Star rating
-    const StarRating = ({ rating }) => (
+    const StarRating = ({ rating = 4 }) => (
         <div className="flex space-x-1 mb-2">
             {[1, 2, 3, 4, 5].map((star) => (
                 <Star
@@ -33,28 +44,27 @@ const ProductCard = ({ favorites, product, setFavorites }) => {
 
 
 
-    const LaptopIcon = () => (
+    const ImageIcon = () => (
         <div className="w-full h-32 flex items-center justify-center mb-3">
-            <div className="relative">
-                <div className="w-24 h-16 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 rounded transform -rotate-6 shadow-lg">
-                    <div className="absolute inset-1 bg-black rounded opacity-90"></div>
-                    <div className="absolute inset-1.5 bg-gradient-to-br from-blue-300 to-blue-500 rounded"></div>
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-24 h-2 bg-gray-300 rounded-full transform rotate-6 shadow-sm"></div>
-            </div>
+            <img
+                src={product?.images[0] && product?.images[0]}
+                alt="Product Icon"
+                className="w-24 h-24 object-contain"
+            />
         </div>
     );
 
+
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+        <div onClick={() => navigate(`/description/${product?._id}`)} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
             <div className="relative">
-                <LaptopIcon />
+                <ImageIcon />
                 <button
-                    onClick={() => toggleFavorite(product.id)}
+                    onClick={() => toggleFavorite(product?._id)}
                     className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded-full transition-colors"
                 >
                     <Heart
-                        className={`w-5 h-5 ${favorites.has(product.id)
+                        className={`w-5 h-5 ${favorites?.has(product?._id)
                             ? 'fill-red-500 text-red-500'
                             : 'text-gray-400'
                             }`}
@@ -62,8 +72,8 @@ const ProductCard = ({ favorites, product, setFavorites }) => {
                 </button>
             </div>
 
-            <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
-            <div className="text-lg font-bold text-gray-900 mb-2">{product.price}</div>
+            <h3 className="font-medium text-gray-900 mb-1">{product?.productName}</h3>
+            <div className="text-lg font-bold text-gray-900 mb-2">{product?.varients?.price}</div>
             <StarRating rating={product.rating} />
         </div>
     )

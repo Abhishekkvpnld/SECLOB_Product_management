@@ -1,23 +1,110 @@
 import { useState } from 'react';
 import { Heart, ChevronRight } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
+import { favoriteProduct_api, favoriteToggle_api, getProduct_api } from '../utils/api';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { useSelector } from 'react-redux';
 
 const ProductDescription = () => {
-  const [selectedRam, setSelectedRam] = useState('4 GB');
+
+
+  const navigate = useNavigate();
+  const { id: productId } = useParams();
+  const user = useSelector((state) => state?.auth?.user)
+
+
+  const [product, setProduct] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [imgIndex, setImgIndex] = useState(0)
+  const [selectedVariant, setSelectedVariant] = useState({});
 
-  const ramOptions = ['4 GB', '8 GB', '16 GB'];
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
 
+
+  const toggleFavorite = async () => {
+    try {
+      const res = await axios.post(
+        favoriteToggle_api,
+        { productId: product[0]?._id },
+        { withCredentials: true }
+      );
+
+      if (res?.data?.success) {
+        if (res?.data?.data && res?.data?.data.length > 0) {
+          const isFav = res.data.data.some(
+            (el) =>
+              el?.userId === user?._id && el?.productId === product[0]?._id
+          );
+          setIsFavorited(isFav);
+        } else {
+          setIsFavorited(false); 
+        }
+        toast.success(res.data.message);
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to update favorites");
+    }
+  };
+
+
+
+
+  const checkFavoriteStatus = async () => {
+    try {
+      const res = await axios.get(favoriteProduct_api, { withCredentials: true });
+      if (res?.data?.success) {
+        const isFav = res?.data?.data?.some(
+          (el) => el?.userId === user?._id && el?.productId === product[0]?._id
+        );
+        setIsFavorited(isFav);
+      }
+    } catch (error) {
+      console.log("Error checking favorite status:", error);
+    }
+  };
+
+
+  const fetchProduct = async () => {
+    try {
+      const res = await axios.get(`${getProduct_api}/${productId}`, { withCredentials: true });
+      if (res?.data?.success) {
+        setProduct(res?.data?.data)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    fetchProduct();
+  }, []);
+
+  useEffect(() => {
+    if (product[0]?._id && user?._id) {
+      checkFavoriteStatus();
+    }
+  }, [product, user]);
+
+
+  useEffect(() => {
+    setSelectedVariant(product[0]?.variants[0])
+  }, []);
+
+
   return (
     <div className="min-h-screen bg-gray-50">
+
+
       {/* Breadcrumb */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <nav className="flex items-center space-x-2 text-sm text-gray-600">
-            <span className="hover:text-gray-800 cursor-pointer">Home</span>
+            <span className="hover:text-gray-800 cursor-pointer" onClick={() => navigate("/")}>Home</span>
             <ChevronRight className="w-4 h-4" />
             <span className="hover:text-gray-800 cursor-pointer">Product details</span>
             <ChevronRight className="w-4 h-4" />
@@ -25,38 +112,51 @@ const ProductDescription = () => {
         </div>
       </div>
 
+
+
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-2 gap-8">
+      <div className=" mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-2 gap-8">
           {/* Product Images */}
           <div className="space-y-4">
             {/* Main Image */}
             <div className="bg-white rounded-2xl border border-gray-200 p-8 aspect-square flex items-center justify-center">
-              <div className="relative">
-                <div className="w-80 h-60 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 rounded-lg transform -rotate-12 shadow-2xl">
-                  <div className="absolute inset-2 bg-black rounded opacity-90"></div>
-                  <div className="absolute inset-3 bg-gradient-to-br from-blue-300 to-blue-500 rounded"></div>
-                </div>
-                <div className="absolute -bottom-4 -right-4 w-80 h-8 bg-gray-300 rounded-full transform rotate-12 shadow-lg"></div>
-              </div>
+              <img
+                src={product[0]?.images[imgIndex]}
+                alt="img"
+                className="max-w-[80%] max-h-[80%] object-cover rounded-lg  transform bg-blend-multiply"
+              />
             </div>
 
+
+
             {/* Thumbnail Images */}
-            <div className="flex space-x-4">
-              <div className="bg-white rounded-lg border border-gray-200 p-4 w-24 h-24 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors">
-                <div className="w-16 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded transform -rotate-6"></div>
-              </div>
-              <div className="bg-white rounded-lg border border-gray-200 p-4 w-24 h-24 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors">
-                <div className="w-16 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded transform rotate-6"></div>
-              </div>
+            <div className="flex space-x-4 overflow-x-scroll hide-scrollbar">
+              {product[0]?.images?.map((img, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg border border-gray-200 p-4 w-24 h-24 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors overflow-x-scroll hide-scrollbar"
+                >
+                  <img
+                    src={img}
+                    onClick={() => setImgIndex(index)}
+                    alt={`Uploaded ${index + 1}`}
+                    className="w-16 h-12 object-cover rounded transform"
+                  />
+                </div>
+              ))}
             </div>
+
+
           </div>
+
+
 
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">HP AMD Ryzen 3</h1>
-              <div className="text-3xl font-bold text-gray-900 mb-4">$529.99</div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product[0]?.productName}</h1>
+              {selectedVariant && <div className="text-3xl font-bold text-gray-900 mb-4">${selectedVariant?.price}.00</div>}
 
               <div className="flex items-center space-x-2 mb-2">
                 <span className="text-gray-600">Availability:</span>
@@ -71,24 +171,26 @@ const ProductDescription = () => {
               </p>
             </div>
 
+
             {/* RAM Selection */}
             <div>
               <label className="block text-gray-700 font-medium mb-3">Ram:</label>
               <div className="flex space-x-2">
-                {ramOptions.map((ram) => (
+                {product[0]?.variants.map((variant, index) => (
                   <button
-                    key={ram}
-                    onClick={() => setSelectedRam(ram)}
-                    className={`px-4 py-2 border rounded-lg font-medium transition-colors ${selectedRam === ram
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    key={index}
+                    onClick={() => setSelectedVariant(variant)}
+                    className={`px-4 py-2 border rounded-lg font-medium transition-colors ${selectedVariant?.ram === variant?.ram
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                       }`}
                   >
-                    {ram}
+                    {variant?.ram}
                   </button>
                 ))}
               </div>
             </div>
+
 
             {/* Quantity */}
             <div>
@@ -110,23 +212,25 @@ const ProductDescription = () => {
               </div>
             </div>
 
+
             {/* Action Buttons */}
-            <div className="flex space-x-4 pt-4">
-              <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-full transition-colors">
+            <div className="flex space-x-1 md:space-x-4 pt-4">
+              <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 md:py-3 px-4 md:px-6 rounded-full transition-colors">
                 Edit product
               </button>
-              <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-full transition-colors">
+              <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 md:py-3 px-4 md:px-6 rounded-full transition-colors">
                 Buy it now
               </button>
               <button
-                onClick={() => setIsFavorited(!isFavorited)}
-                className={`p-3 border rounded-full transition-colors ${isFavorited
-                    ? 'border-red-500 bg-red-50 text-red-500'
-                    : 'border-gray-300 hover:border-gray-400 text-gray-600'
+                onClick={toggleFavorite}
+                className={`p-3 border cursor-pointer rounded-full transition-colors ${isFavorited
+                  ? 'border-red-500 bg-red-50 text-red-500'
+                  : 'border-gray-300 hover:border-gray-400 text-gray-600'
                   }`}
               >
                 <Heart className={`w-6 h-6 ${isFavorited ? 'fill-current' : ''}`} />
               </button>
+
             </div>
           </div>
         </div>

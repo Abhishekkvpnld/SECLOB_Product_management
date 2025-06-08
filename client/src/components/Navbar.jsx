@@ -1,25 +1,20 @@
 import { useState } from 'react';
-import { User, ShoppingCart, Heart} from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { User, ShoppingCart, Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { logout_api } from '../utils/api';
 import { userNotExists } from '../redux/reducers/auth';
 
-const Navbar = () => {
+const Navbar = ({ searchQuery, setSearchQuery }) => {
 
     const navigate = useNavigate();
     const user = useSelector((state) => state?.auth?.user);
     const dispatch = useDispatch();
 
-    const [searchQuery, setSearchQuery] = useState('');
     const [cartCount] = useState(3);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        console.log('Searching for:', searchQuery);
-    };
 
     const handleLogout = async () => {
         try {
@@ -41,9 +36,9 @@ const Navbar = () => {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <div className="flex-shrink-0">
-                        <Link href="/" onClick={() => navigate("/")} className="text-white text-xl font-bold hover:text-blue-200 transition-colors">
+                        <div onClick={() => navigate("/")} className="text-white text-xl font-bold hover:text-blue-200 transition-colors">
                             TechStore
-                        </Link>
+                        </div>
                     </div>
 
                     {/* Search Bar */}
@@ -52,14 +47,12 @@ const Navbar = () => {
                             <div className="flex bg-white rounded-full shadow-md hover:shadow-lg transition-shadow">
                                 <input
                                     type="text"
-                                    placeholder="Search any things"
+                                    placeholder="Search any products"
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch(e)}
+                                    onChange={(e)=>setSearchQuery(e.target.value)}
                                     className="flex-1 px-6 py-3 rounded-l-full border-none outline-none text-gray-700 placeholder-gray-400"
                                 />
                                 <button
-                                    onClick={handleSearch}
                                     className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white px-8 py-3 rounded-r-full font-semibold transition-all duration-200 hover:shadow-md"
                                 >
                                     Search

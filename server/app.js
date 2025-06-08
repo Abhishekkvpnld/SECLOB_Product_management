@@ -20,7 +20,7 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
-app.use(morgan("dev"));
+app.use(morgan("dev")); 
 
 app.use("/api/user", userRoute);
 app.use("/api/product", productRoute);

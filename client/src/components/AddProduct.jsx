@@ -2,29 +2,43 @@ import { useState } from 'react';
 import { X, ChevronDown, Plus, Minus } from 'lucide-react';
 import uploadImageToCloudinary from '../helpers/uploadToCloudinary';
 import toast from "react-hot-toast";
-import { addProduct_api } from '../utils/api';
+import { addProduct_api, allSubCategory_api } from '../utils/api';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
+import { useEffect } from 'react';
 
 
 const AddProductPopup = ({ setIsOpen }) => {
 
 
-    const [imageLoad, setImageLoad] = useState(false)
+    const user = useSelector((state) => state?.auth)
+
+    const [imageLoad, setImageLoad] = useState(false);
+    const [subCategories, setSubCategories] = useState([]);
+    const [selectedSubCategories, setSelectedSubCategories] = useState("");
     const [formData, setFormData] = useState({
         title: 'HP AMD Ryzen 3',
-        subCategory: '68448437078f3f3bf89b0afd',
-        description: 'The Ryzen 7 is a more high-end processor that compares to the Int...'
+        subCategory: 'select',
+        description: ''
     });
 
-    const [variants, setVariants] = useState([
-        { ram: '4 GB', price: '529.99', qty: 1 },
-        { ram: '8 GB', price: '929.99', qty: 3 }
-    ]);
+    const [variants, setVariants] = useState([]);
 
     const [uploadedImages, setUploadedImages] = useState([]);
     const [isSubCategoryOpen, setIsSubCategoryOpen] = useState(false);
 
-    const subCategories = ['apple', 'Dell', 'Lenovo', 'Asus', 'Acer', 'Apple'];
+
+
+    const fetchAllSubCategory = async () => {
+        try {
+            const res = await axios.get(allSubCategory_api, { withCredentials: true });
+            if (res?.data?.success) {
+                setSubCategories(res?.data?.data)
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    };
 
 
     //Handle Input Change
@@ -84,9 +98,9 @@ const AddProductPopup = ({ setIsOpen }) => {
     const handleAdd = async (e) => {
         e.preventDefault();
         try {
-            const product = { ...formData, variants, images: uploadedImages };
+            const product = { ...formData, variants, images: uploadedImages};
 
-            const res = await axios.post(addProduct_api, product);
+            const res = await axios.post(addProduct_api, product, { withCredentials: true });
             if (res?.data?.success) {
                 toast.success(res?.data?.message);
             }
@@ -104,6 +118,10 @@ const AddProductPopup = ({ setIsOpen }) => {
         setIsOpen(false);
     };
 
+
+    useEffect(() => {
+        fetchAllSubCategory()
+    }, []);
 
 
     return (
@@ -139,7 +157,7 @@ const AddProductPopup = ({ setIsOpen }) => {
                     {/* Variants */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Variants :</label>
-                        {variants.map((variant, index) => (
+                        {variants?.map((variant, index) => (
                             <div key={index} className="flex items-center gap-2 mb-2">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-gray-600">Ram:</span>
@@ -212,22 +230,23 @@ const AddProductPopup = ({ setIsOpen }) => {
                             onClick={() => setIsSubCategoryOpen(!isSubCategoryOpen)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md text-left bg-white flex items-center justify-between focus:ring-2 focus:ring-orange-400"
                         >
-                            <span>{formData.subCategory}</span>
+                            <span>{selectedSubCategories}</span>
                             <ChevronDown className={`w-4 h-4 transition-transform ${isSubCategoryOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isSubCategoryOpen && (
                             <div className=" top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10">
-                                {subCategories.map((category) => (
+                                {subCategories?.map((category) => (
                                     <button
-                                        key={category}
+                                        key={category?._id}
                                         onClick={() => {
-                                            handleInputChange('subCategory', category);
+                                            handleInputChange('subCategory', category?._id);
+                                            setSelectedSubCategories(category?.subCategory)
                                             setIsSubCategoryOpen(false);
                                         }}
                                         className="w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors"
                                     >
-                                        {category}
+                                        {category?.subCategory}
                                     </button>
                                 ))}
                             </div>
