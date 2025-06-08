@@ -1,32 +1,58 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
+import axios from 'axios';
+import { addSubCategory_api, allCategory_api } from '../utils/api';
 
-const AddSubCategoryPopup = () => {
-    const [isOpen, setIsOpen] = useState(true);
+
+const AddSubCategoryPopup = ({ setIsOpen }) => {
     const [selectedCategory, setSelectedCategory] = useState('');
     const [subCategoryName, setSubCategoryName] = useState('');
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [categories, setCategories] = useState([]);
 
-    // Sample categories - replace with your actual categories
-    const categories = [
-        'Laptop',
-        'Desktop',
-        'Tablet',
-        'Smartphone',
-        'Accessories',
-        'Headphones'
-    ];
 
-    const handleAdd = () => {
-        if (selectedCategory && subCategoryName.trim()) {
-            console.log('Adding sub-category:', {
-                category: selectedCategory,
-                subCategory: subCategoryName
-            });
-            // Handle add sub-category logic here
-            setSelectedCategory('');
-            setSubCategoryName('');
-            setIsOpen(false);
+    const fetchCategory = async () => {
+        try {
+            const res = await axios.get(allCategory_api, { withCredentials: true });
+            if (res?.data?.success) {
+                setCategories(res?.data?.data);
+            }
+        } catch (error) {
+            toast.error("Error fetching categories...");
+        }
+    };
+
+    useEffect(() => {
+        fetchCategory();
+    }, []);
+
+    const handleCategorySelect = (value) => {
+        setSelectedCategory(value);
+    };
+
+    const handleAdd = async (e) => {
+        e.preventDefault();
+        try {
+            if (selectedCategory && subCategoryName.trim()) {
+                const categoryId = categories.find(
+                    (el) => el?.categoryName === selectedCategory
+                )?._id;
+
+                const res = await axios.post(
+                    addSubCategory_api,
+                    { subCategoryName, category: categoryId },
+                    { withCredentials: true }
+                );
+
+                if (res?.data?.success) {
+                    setSelectedCategory('');
+                    setSubCategoryName('');
+                    setIsOpen(false);
+                    toast.success(res?.data?.message);
+                }
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Something went wrong");
         }
     };
 
@@ -36,34 +62,16 @@ const AddSubCategoryPopup = () => {
         setIsOpen(false);
     };
 
-    const handleClose = () => {
-        setIsOpen(false);
-    };
-
-    const handleCategorySelect = (category) => {
-        setSelectedCategory(category);
-        setIsDropdownOpen(false);
-    };
-
-    if (!isOpen) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="bg-orange-500 text-white px-6 py-2 rounded-full hover:bg-orange-600 transition-colors"
-                >
-                    Show Add Sub Category Modal
-                </button>
-            </div>
-        );
-    }
-
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+        <div className="fixed inset-0 bg-blue-50/80 flex items-center justify-center p-4 z-50">
+            <form
+                onSubmit={handleAdd}
+                className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative"
+            >
                 {/* Close Button */}
                 <button
-                    onClick={handleClose}
+                    type="button"
+                    onClick={handleDiscard}
                     className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                     <X className="w-5 h-5" />
@@ -75,36 +83,31 @@ const AddSubCategoryPopup = () => {
                 </h2>
 
                 {/* Category Dropdown */}
-                <div className="mb-4 relative">
-                    <button
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 text-left bg-white flex items-center justify-between"
+                <div className="mb-4">
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => handleCategorySelect(e.target.value)}
+                        className="w-full capitalize px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 text-gray-700 bg-white"
                     >
-                        <span className={selectedCategory ? 'text-gray-700' : 'text-gray-500'}>
-                            {selectedCategory || 'Select category'}
-                        </span>
-                        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {isDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                            {categories.map((category) => (
-                                <button
-                                    key={category}
-                                    onClick={() => handleCategorySelect(category)}
-                                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg"
-                                >
-                                    {category}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                        <option value="" disabled>
+                            Select category
+                        </option>
+                        {categories?.map((category) => (
+                            <option
+                                className="capitalize"
+                                key={category?._id}
+                                value={category?.categoryName}
+                            >
+                                {category?.categoryName}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Sub Category Input Field */}
                 <div className="mb-6">
                     <input
+                        required
                         type="text"
                         value={subCategoryName}
                         onChange={(e) => setSubCategoryName(e.target.value)}
@@ -113,33 +116,26 @@ const AddSubCategoryPopup = () => {
                     />
                 </div>
 
-                {/* Buttons */}
+                {/* Submit Buttons */}
                 <div className="flex gap-3">
                     <button
-                        onClick={handleAdd}
+                        type="submit"
                         disabled={!selectedCategory || !subCategoryName.trim()}
                         className="flex-1 bg-orange-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-600 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
                         ADD
                     </button>
                     <button
+                        type="button"
                         onClick={handleDiscard}
                         className="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-600 transition-colors duration-200"
                     >
                         DISCARD
                     </button>
                 </div>
-            </div>
-
-            {/* Click outside to close dropdown */}
-            {isDropdownOpen && (
-                <div
-                    className="fixed inset-0 z-0"
-                    onClick={() => setIsDropdownOpen(false)}
-                />
-            )}
+            </form>
         </div>
     );
-}
+};
 
 export default AddSubCategoryPopup;

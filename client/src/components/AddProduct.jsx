@@ -1,11 +1,18 @@
 import { useState } from 'react';
-import { X, ChevronDown, Plus, Minus, Upload } from 'lucide-react';
+import { X, ChevronDown, Plus, Minus } from 'lucide-react';
+import uploadImageToCloudinary from '../helpers/uploadToCloudinary';
+import toast from "react-hot-toast";
+import { addProduct_api } from '../utils/api';
+import axios from 'axios';
 
-const AddProductPopup = () => {
-    const [isOpen, setIsOpen] = useState(true);
+
+const AddProductPopup = ({ setIsOpen }) => {
+
+
+    const [imageLoad, setImageLoad] = useState(false)
     const [formData, setFormData] = useState({
         title: 'HP AMD Ryzen 3',
-        subCategory: 'HP',
+        subCategory: '68448437078f3f3bf89b0afd',
         description: 'The Ryzen 7 is a more high-end processor that compares to the Int...'
     });
 
@@ -14,15 +21,13 @@ const AddProductPopup = () => {
         { ram: '8 GB', price: '929.99', qty: 3 }
     ]);
 
-    const [uploadedImages, setUploadedImages] = useState([
-        '/api/placeholder/80/60', // Placeholder for laptop image 1
-        '/api/placeholder/80/60'  // Placeholder for laptop image 2
-    ]);
-
+    const [uploadedImages, setUploadedImages] = useState([]);
     const [isSubCategoryOpen, setIsSubCategoryOpen] = useState(false);
 
-    const subCategories = ['HP', 'Dell', 'Lenovo', 'Asus', 'Acer', 'Apple'];
+    const subCategories = ['apple', 'Dell', 'Lenovo', 'Asus', 'Acer', 'Apple'];
 
+
+    //Handle Input Change
     const handleInputChange = (field, value) => {
         setFormData({ ...formData, [field]: value });
     };
@@ -33,6 +38,7 @@ const AddProductPopup = () => {
         setVariants(newVariants);
     };
 
+    //Handle Quantity
     const handleQuantityChange = (index, increment) => {
         const newVariants = [...variants];
         const currentQty = parseInt(newVariants[index].qty) || 0;
@@ -41,9 +47,11 @@ const AddProductPopup = () => {
         setVariants(newVariants);
     };
 
+    //Add & Remove Variants
     const addVariant = () => {
         setVariants([...variants, { ram: '', price: '', qty: 1 }]);
     };
+
 
     const removeVariant = (index) => {
         if (variants.length > 1) {
@@ -51,42 +59,57 @@ const AddProductPopup = () => {
         }
     };
 
-    const handleImageUpload = (event) => {
+
+    //Image upload
+    const handleImageUpload = async (event) => {
+        setImageLoad(true)
         const files = Array.from(event.target.files);
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setUploadedImages(prev => [...prev, e.target.result]);
-            };
-            reader.readAsDataURL(file);
-        });
+
+        for (const file of files) {
+            try {
+                const uploaded = await uploadImageToCloudinary(file);
+                console.log(uploaded?.secure_url)
+                setUploadedImages((prev) => [...prev, uploaded.secure_url]);
+            } catch (err) {
+                console.error("Image upload failed:", err);
+                toast.error("Failed to upload images...🔃")
+            } finally {
+                setImageLoad(false);
+            }
+        }
     };
 
-    const handleAdd = () => {
-        console.log('Adding product:', { ...formData, variants, images: uploadedImages });
-        setIsOpen(false);
+
+
+    const handleAdd = async (e) => {
+        e.preventDefault();
+        try {
+            const product = { ...formData, variants, images: uploadedImages };
+
+            const res = await axios.post(addProduct_api, product);
+            if (res?.data?.success) {
+                toast.success(res?.data?.message);
+            }
+            setIsOpen(false);
+        } catch (err) {
+            toast.error(err?.response?.data?.message);
+            console.error('Failed to add product:', err);
+        }
     };
+
+
+
 
     const handleDiscard = () => {
         setIsOpen(false);
     };
 
-    if (!isOpen) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="bg-orange-500 text-white px-6 py-2 rounded-full hover:bg-orange-600 transition-colors"
-                >
-                    Show Add Product Modal
-                </button>
-            </div>
-        );
-    }
+
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-blue-50/80 flex items-center justify-center p-4 z-50">
+            <form onSubmit={handleAdd} className="bg-white hide-scrollbar border-2 border-slate-100 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+
                 {/* Header */}
                 <div className="sticky top-0 bg-white p-6 border-b border-gray-200">
                     <button
@@ -99,6 +122,8 @@ const AddProductPopup = () => {
                 </div>
 
                 <div className="p-6 space-y-6">
+
+
                     {/* Title */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Title :</label>
@@ -109,6 +134,7 @@ const AddProductPopup = () => {
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-400 focus:border-transparent"
                         />
                     </div>
+
 
                     {/* Variants */}
                     <div>
@@ -135,15 +161,19 @@ const AddProductPopup = () => {
                                         placeholder="$529.99"
                                     />
                                 </div>
+
                                 <div className="flex items-center gap-1">
                                     <span className="text-sm text-gray-600">Qty:</span>
+
                                     <button
                                         onClick={() => handleQuantityChange(index, -1)}
                                         className="w-6 h-6 flex items-center justify-center border border-gray-300 rounded text-sm hover:bg-gray-50"
                                     >
                                         <Minus className="w-3 h-3" />
                                     </button>
+
                                     <span className="w-8 text-center text-sm">{variant.qty}</span>
+
                                     <button
                                         onClick={() => handleQuantityChange(index, 1)}
                                         className="w-6 h-6 flex items-center justify-center border border-gray-300 rounded text-sm hover:bg-gray-50"
@@ -151,6 +181,7 @@ const AddProductPopup = () => {
                                         <Plus className="w-3 h-3" />
                                     </button>
                                 </div>
+
                                 {variants.length > 1 && (
                                     <button
                                         onClick={() => removeVariant(index)}
@@ -169,8 +200,13 @@ const AddProductPopup = () => {
                         </button>
                     </div>
 
+
+
+
+
+
                     {/* Sub Category */}
-                    <div className="relative">
+                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Sub category :</label>
                         <button
                             onClick={() => setIsSubCategoryOpen(!isSubCategoryOpen)}
@@ -179,8 +215,9 @@ const AddProductPopup = () => {
                             <span>{formData.subCategory}</span>
                             <ChevronDown className={`w-4 h-4 transition-transform ${isSubCategoryOpen ? 'rotate-180' : ''}`} />
                         </button>
+
                         {isSubCategoryOpen && (
-                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10">
+                            <div className=" top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10">
                                 {subCategories.map((category) => (
                                     <button
                                         key={category}
@@ -197,6 +234,15 @@ const AddProductPopup = () => {
                         )}
                     </div>
 
+
+
+
+
+
+
+
+
+
                     {/* Description */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Description :</label>
@@ -208,12 +254,21 @@ const AddProductPopup = () => {
                         />
                     </div>
 
+
+
+
+
+
+
+
+
+
                     {/* Upload Images */}
-                    <div>
+                    <div className=' overflow-x-scroll hide-scrollbar'>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Upload image:</label>
-                        <div className="flex items-center gap-3">
-                            {uploadedImages.map((image, index) => (
-                                <div key={index} className="w-20 h-16 border-2 border-gray-300 rounded-md overflow-hidden">
+                        <div className="flex items-center gap-3 overflow-x-scroll hide-scrollbar">
+                            {uploadedImages?.map((image, index) => (
+                                <div key={index} className="w-20 h-16 border-2 border-gray-300 rounded-md">
                                     <img
                                         src={image}
                                         alt={`Product ${index + 1}`}
@@ -221,25 +276,38 @@ const AddProductPopup = () => {
                                     />
                                 </div>
                             ))}
-                            <label className="w-20 h-16 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors">
-                                <input
-                                    type="file"
-                                    multiple
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
-                                />
-                                <Plus className="w-6 h-6 text-gray-400" />
-                            </label>
+                            {
+                                imageLoad ? (
+                                    <div className="w-20 h-16 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center">
+                                        <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                                    </div>
+                                ) : (
+                                    <label className="w-20 h-16 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors">
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            className="hidden"
+                                        />
+                                        <Plus className="w-6 h-6 text-gray-400" />
+                                    </label>
+                                )
+                            }
+
                         </div>
                     </div>
                 </div>
+
+
+
+
 
                 {/* Footer Buttons */}
                 <div className="sticky bottom-0 bg-white p-6 border-t border-gray-200">
                     <div className="flex gap-3">
                         <button
-                            onClick={handleAdd}
+                            type='submit'
                             className="flex-1 bg-orange-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-600 transition-colors duration-200"
                         >
                             ADD
@@ -252,7 +320,7 @@ const AddProductPopup = () => {
                         </button>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
     );
 }

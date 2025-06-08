@@ -2,12 +2,19 @@
 
 import { useState } from 'react';
 import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { signup_api } from '../utils/api';
+import axios from 'axios';
 
 const Signup = () => {
 
+
+    const navigate = useNavigate();
+
+    const [loading, setLoading] = useState(false)
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
-        name: '',
+        username: '',
         email: '',
         password: ''
     });
@@ -19,12 +26,25 @@ const Signup = () => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Form submitted:', formData);
+
+        alert(formData)
+        try {
+            setLoading(true)
+            const res = await axios.post(signup_api, formData)
+            if (res?.data?.success) {
+                toast.success(res?.data?.message);
+                navigate("/login")
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message)
+            console.log(error?.response.data?.message)
+        } finally {
+            setLoading(false)
+        }
 
     };
-
 
     return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -50,9 +70,7 @@ const Signup = () => {
                             To keep connected with us please login with your personal info
                         </p>
 
-                        <button
-                            className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300 transform hover:scale-105 w-fit"
-                        >
+                        <button onClick={() => navigate("/login")} className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300 transform hover:scale-105 w-fit">
                             SIGN IN
                         </button>
                     </div>
@@ -61,7 +79,7 @@ const Signup = () => {
                 {/* Right Panel - Form */}
                 <div className={`flex-1 p-8 flex flex-col justify-center items-center transition-all duration-700 order-2`}>
                     <div className="transform transition-all duration-500">
-                        <h2 className="text-3xl font-bold mb-3 text-gray-800 mb-2">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-2">
                             Create Account
                         </h2>
 
@@ -75,8 +93,8 @@ const Signup = () => {
                                 </div>
                                 <input
                                     type="text"
-                                    name="name"
-                                    value={formData.name}
+                                    name="username"
+                                    value={formData.username}
                                     onChange={handleInputChange}
                                     placeholder="Name"
                                     className="w-64 pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 hover:border-gray-400"
@@ -131,17 +149,17 @@ const Signup = () => {
 
                             {/* Submit Button */}
                             <button
-                                type="button"
-                                className="w-[50%] bg-gradient-to-r rounded-full from-orange-400 to-orange-500 text-white py-3 font-semibold hover:from-orange-500 hover:to-orange-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                                type="submit"
+                                className="w-[50%] cursor-pointer bg-gradient-to-r rounded-full from-orange-400 to-orange-500 text-white py-3 font-semibold hover:from-orange-500 hover:to-orange-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                             >
-                                SIGN UP
+                                {loading ? "loading..." : "SIGN UP"}
                             </button>
                         </form>
 
                     </div>
 
                     {/* Sign In Button */}
-                  <h3 className='mt-3 md:hidden'>Already have an account ? <span className='underline cursor-pointer'>Login</span> </h3>
+                    <h3 className='mt-3 md:hidden'>Already have an account ? <span className='underline cursor-pointer' onClick={() => navigate("/login")}>Login</span> </h3>
                 </div>
             </div>
         </div>

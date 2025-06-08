@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import toast from 'react-hot-toast';
+import axios from 'axios';
+import { addCategory_api } from '../utils/api';
 
-const AddCategoryPopup = () => {
-    const [isOpen, setIsOpen] = useState(true);
+const AddCategoryPopup = ({ setIsOpen }) => {
     const [categoryName, setCategoryName] = useState('');
 
-    const handleAdd = () => {
-        if (categoryName.trim()) {
-            console.log('Adding category:', categoryName);
-            // Handle add category logic here
-            setCategoryName('');
-            setIsOpen(false);
+    const handleAdd = async () => {
+        try {
+            if (categoryName.trim()) {
+                const res = await axios.post(addCategory_api, { categoryName }, { withCredentials: true });
+                if (res?.data?.success) {
+                    setCategoryName('');
+                    setIsOpen(false);
+                    toast.success(res?.data?.message)
+                }
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message)
         }
     };
 
@@ -19,29 +27,13 @@ const AddCategoryPopup = () => {
         setIsOpen(false);
     };
 
-    const handleClose = () => {
-        setIsOpen(false);
-    };
-
-    if (!isOpen) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="bg-orange-500 text-white px-6 py-2 rounded-full hover:bg-orange-600 transition-colors"
-                >
-                    Show Add Category Modal
-                </button>
-            </div>
-        );
-    }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-blue-50/80 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
                 {/* Close Button */}
                 <button
-                    onClick={handleClose}
+                    onClick={handleDiscard}
                     className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                     <X className="w-5 h-5" />

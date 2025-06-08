@@ -1,11 +1,18 @@
-
-
-
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import axios from "axios";
+import { login_api } from '../utils/api';
+import toast from 'react-hot-toast';
+
+
 
 const Login = () => {
+
+  const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -18,14 +25,26 @@ const Login = () => {
     });
   };
 
-  const handleSignIn = () => {
-    console.log('Sign In clicked:', formData);
-    // Handle sign in logic here
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true)
+      const res = await axios.post(login_api, formData,{withCredentials:true})
+      if (res?.data?.success) {
+        toast.success(res?.data?.message);
+        navigate("/") 
+      }
+    } catch (error) {
+      toast.error(error?.response.data?.message)
+      console.log(error?.response.data?.message)
+    } finally {
+      setLoading(false)
+    }
+
   };
 
   const handleSignUp = () => {
-    console.log('Sign Up clicked');
-    // Handle sign up navigation here
+    navigate("/signup")
   };
 
   return (
@@ -93,9 +112,9 @@ const Login = () => {
 
               {/* Sign In Button */}
               <button
-                className="w-[50%] bg-gradient-to-r rounded-full from-orange-400 to-orange-500 text-white py-3 font-semibold hover:from-orange-500 hover:to-orange-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="w-[50%] cursor-pointer bg-gradient-to-r rounded-full from-orange-400 to-orange-500 text-white py-3 font-semibold hover:from-orange-500 hover:to-orange-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
-                SIGN IN
+                {loading ? "Loading..." : "SIGN IN"}
               </button>
             </form>
           </div>
