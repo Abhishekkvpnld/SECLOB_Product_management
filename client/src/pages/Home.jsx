@@ -139,8 +139,8 @@ const Home = () => {
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white ">
-          <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <nav className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex justify-start md:justify-between items-center">
+            <nav className="md:flex hidden items-center space-x-2 text-sm text-gray-600">
               <span className="hover:text-gray-800 cursor-pointer">Home</span>
               <ChevronRight className="w-4 h-4" />
             </nav>
@@ -165,7 +165,7 @@ const Home = () => {
 
         <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6">
           {/* Sidebar */}
-          <div className="w-64 bg-white rounded-lg border border-gray-200 p-4 h-fit">
+          <div className="w-64 hidden md:block bg-white rounded-lg border border-gray-200 p-4 h-fit">
             <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
 
             <div className="space-y-2">

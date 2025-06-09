@@ -129,7 +129,7 @@ const ProductDescription = () => {
           {/* Product Images */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-8 aspect-square flex items-center justify-center">
+            <div className="bg-white rounded-2xl border border-gray-200 p-8 aspect-square flex items-center justify-center max-w-[90%]">
               <img
                 src={product[0]?.images[imgIndex]}
                 alt="img"

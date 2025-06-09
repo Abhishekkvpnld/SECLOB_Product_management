@@ -35,7 +35,7 @@ const Navbar = ({ searchQuery, setSearchQuery }) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 hidden md:block">
                         <div onClick={() => navigate("/")} className="text-white text-xl font-bold hover:text-blue-200 transition-colors">
                             TechStore
                         </div>
@@ -50,10 +50,10 @@ const Navbar = ({ searchQuery, setSearchQuery }) => {
                                     placeholder="Search any products"
                                     value={searchQuery}
                                     onChange={(e)=>setSearchQuery(e.target.value)}
-                                    className="flex-1 px-6 py-3 rounded-l-full border-none outline-none text-gray-700 placeholder-gray-400"
+                                    className="flex-1 px-3 md:px-6 py-2 md:py-3 rounded-l-full border-none outline-none text-gray-700 placeholder-gray-400"
                                 />
                                 <button
-                                    className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white px-8 py-3 rounded-r-full font-semibold transition-all duration-200 hover:shadow-md"
+                                    className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white px-5 py-2 md:px-8 md:py-3 rounded-r-full font-semibold transition-all duration-200 hover:shadow-md"
                                 >
                                     Search
                                 </button>
