@@ -6,6 +6,7 @@ import { favoriteProduct_api, favoriteToggle_api, getProduct_api } from '../util
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
+import AddProductPopup from '../components/AddProduct';
 
 const ProductDescription = () => {
 
@@ -20,6 +21,7 @@ const ProductDescription = () => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [imgIndex, setImgIndex] = useState(0)
   const [selectedVariant, setSelectedVariant] = useState({});
+  const [updateProduct, setUpdateProduct] = useState(false)
 
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
@@ -42,7 +44,7 @@ const ProductDescription = () => {
           );
           setIsFavorited(isFav);
         } else {
-          setIsFavorited(false); 
+          setIsFavorited(false);
         }
         toast.success(res.data.message);
       }
@@ -94,6 +96,13 @@ const ProductDescription = () => {
   useEffect(() => {
     setSelectedVariant(product[0]?.variants[0])
   }, []);
+
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
 
   return (
@@ -215,7 +224,7 @@ const ProductDescription = () => {
 
             {/* Action Buttons */}
             <div className="flex space-x-1 md:space-x-4 pt-4">
-              <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 md:py-3 px-4 md:px-6 rounded-full transition-colors">
+              <button onClick={() => setUpdateProduct((prev) => !updateProduct)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 md:py-3 px-4 md:px-6 rounded-full transition-colors">
                 Edit product
               </button>
               <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 md:py-3 px-4 md:px-6 rounded-full transition-colors">
@@ -235,6 +244,9 @@ const ProductDescription = () => {
           </div>
         </div>
       </div>
+
+
+      {updateProduct && <AddProductPopup isOpen={updateProduct} product={product[0]} isUpdate={true} setIsOpen={setUpdateProduct} />}
     </div>
   );
 }

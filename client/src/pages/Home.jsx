@@ -22,7 +22,9 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [updatedList, setUpdatedList] = useState(allProducts);
   const [groupedCategories, setGroupedCategories] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [activeSubCategory, setActiveSubCategory] = useState(null);
+
 
 
 
@@ -84,6 +86,28 @@ const Home = () => {
       [categoryId]: !prev[categoryId]
     }));
   };
+
+
+
+  const handleSubCategoryClick = (subCategoryId, categoryId) => {
+    const isSameClick = activeSubCategory === subCategoryId;
+
+    if (isSameClick) {
+      // Deselect and show all products
+      setActiveSubCategory(null);
+      setUpdatedList(allProducts);
+    } else {
+      // Select and show filtered products
+      const filtered = allProducts?.filter(
+        (product) =>
+          product?.subCategory === subCategoryId &&
+          product?.category === categoryId
+      );
+      setActiveSubCategory(subCategoryId);
+      setUpdatedList(filtered || []);
+    }
+  };
+
 
 
   useEffect(() => {
@@ -153,20 +177,23 @@ const Home = () => {
                 <div key={index}>
                   <div
                     className="flex items-center justify-between text-sm font-medium text-gray-900 cursor-pointer hover:text-gray-700"
-                    onClick={() => toggleCategory(el.categoryId)}
+                    onClick={() => toggleCategory(el?.categoryId)}
                   >
                     <span>{el?.categoryName}</span>
                     <ChevronDown
-                      className={`w-4 h-4 transition-transform ${openCategories[el.categoryId] ? 'rotate-180' : ''
-                        }`}
+                      className={`w-4 h-4 transition-transform ${openCategories[el.categoryId] ? 'rotate-180' : ''}`}
                     />
                   </div>
 
                   {openCategories[el?.categoryId] && (
                     <div className="ml-4 mt-2 space-y-2">
                       {el?.subCategories?.map((sub, i) => (
-                        <div key={i} className="flex items-center space-x-2">
-                          <div className="w-4 h-4 bg-gray-800 rounded-sm"></div>
+                        <div
+                          key={i}
+                          onClick={() => handleSubCategoryClick(sub?._id, el?.categoryId)}
+                          className={`flex items-center space-x-2 cursor-pointer hover:text-gray-800`}
+                        >
+                          <div className={`w-4 h-4 bg-gray-800 rounded-sm ${activeSubCategory == sub?._id ? "bg-red-600" : ""} `}></div>
                           <span className="text-sm text-gray-600">{sub?.subCategory}</span>
                         </div>
                       ))}
@@ -174,6 +201,7 @@ const Home = () => {
                   )}
                 </div>
               ))}
+
 
 
             </div>
@@ -200,7 +228,7 @@ const Home = () => {
       {/* Popup windows */}
       {addSubCategory && <AddSubCategoryPopup setIsOpen={setAddSubCategory} />}
       {addCategory && <AddCategoryPopup setIsOpen={setAddCategory} />}
-      {addProduct && <AddProductPopup isOpen={addProduct} setIsOpen={setAddProduct} />}
+      {addProduct && <AddProductPopup isOpen={addProduct} setIsOpen={setAddProduct} fetchProducts={() => fetchAllProducts()} />}
 
     </div>
 

@@ -5,11 +5,13 @@ import { useState } from "react";
 import { allFavProducts_api } from "../utils/api";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const Favorite = () => {
 
     const navigate = useNavigate();
     const [favorites, setFavorites] = useState([]);
+    const user = useSelector((state) => state.auth.user);
 
     const fetchFavorite = async () => {
         try {
@@ -25,6 +27,13 @@ const Favorite = () => {
     useEffect(() => {
         fetchFavorite();
     }, []);
+
+
+    useEffect(() => {
+        if (!user) {
+            return navigate("/login");
+        }
+    }, [user, navigate]);
 
     return (
         <div>

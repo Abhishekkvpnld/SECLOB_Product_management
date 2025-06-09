@@ -20,7 +20,7 @@ router.post("/add-category", authToken, addCategory);
 router.post("/add-subcategory", authToken, addSubCategory);
 router.get("/all-category", authToken, getAllCategories);
 router.post("/add-product",authToken, addProduct);
-router.put("/update-product", authToken, updateProduct);
+router.put("/update-product/:id", authToken, updateProduct);
 router.get("/getAll-product", getAllProducts);
 router.get("/get-product/:id", authToken, getAllProducts);
 router.post("/fav-toggle", authToken, toggleFavorite);

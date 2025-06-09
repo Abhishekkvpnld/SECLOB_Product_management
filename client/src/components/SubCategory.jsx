@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { addSubCategory_api, allCategory_api } from '../utils/api';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
 
 const AddSubCategoryPopup = ({ setIsOpen }) => {
 
+    const navigate = useNavigate();
     const [selectedCategory, setSelectedCategory] = useState('');
     const [subCategoryName, setSubCategoryName] = useState('');
     const [categories, setCategories] = useState([]);
+    const user = useSelector((state) => state.auth.user);
+
 
 
     const fetchCategory = async () => {
@@ -63,6 +68,13 @@ const AddSubCategoryPopup = ({ setIsOpen }) => {
     useEffect(() => {
         fetchCategory();
     }, []);
+
+    useEffect(() => {
+        if (!user) {
+            return navigate("/login");
+        }
+    }, [user, navigate]);
+
 
 
     return (

@@ -17,7 +17,7 @@ const subCategorySchema = new mongoose.Schema(
       ref: "Category",
       required: [true, "Parent category is required"],
     },
-  },
+  }, 
   { timestamps: true }
 );
 

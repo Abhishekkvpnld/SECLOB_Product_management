@@ -150,52 +150,59 @@ export const addProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { id } = req.params;
     const { title, subCategory, description, variants, images } = req.body;
     const userId = req?.user?.id;
 
-    if (!productId) {
+    if (!id) {
       return res.status(400).json({
         success: false,
         error: true,
-        message: "Product ID is required",
+        message: "Product ID is required.",
       });
     }
 
-    const product = await Product.findById(productId);
+    const product = await Product.findById(id);
 
     if (!product) {
       return res.status(404).json({
         success: false,
         error: true,
-        message: "Product not found",
+        message: "Product not found.",
       });
     }
 
-    // Update fields
-    if (title) product.title = title;
-    if (subCategory) product.subCategory = subCategory;
-    if (description) product.description = description;
-    if (variants && Array.isArray(variants)) product.variants = variants;
-    if (images && Array.isArray(images)) product.images = images;
+    //  Check ownership if needed
+    if (product?.user?.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: true,
+        message: "You are not authorized to update this product.",
+      });
+    }
+
+    // Update only fields that are sent
+    if (title !== undefined) product.title = title;
+    if (subCategory !== undefined) product.subCategory = subCategory;
+    if (description !== undefined) product.description = description;
+    if (Array.isArray(variants)) product.variants = variants;
+    if (Array.isArray(images)) product.images = images;
     if (userId) product.user = userId;
-    if (product.category) product.category = product.category;
 
     await product.save();
 
     res.status(200).json({
       success: true,
       error: false,
-      message: "Product data updated successfully...✅",
+      message: "Product updated successfully ✅",
       data: product,
     });
   } catch (error) {
-    console.error("Update error:", error);
+    console.error("Product update error:", error.message);
     res.status(500).json({
-      error: true,
       success: false,
-      data: [],
-      message: error?.message || "Internal server error",
+      error: true,
+      message: error.message || "Internal server error",
     });
   }
 };

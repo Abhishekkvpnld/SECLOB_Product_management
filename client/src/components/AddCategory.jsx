@@ -3,9 +3,14 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { addCategory_api } from '../utils/api';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
 const AddCategoryPopup = ({ setIsOpen }) => {
+
+     const user = useSelector((state) => state.auth.user);
     const [categoryName, setCategoryName] = useState('');
+     const navigate = useNavigate();
 
     const handleAdd = async () => {
         try {
@@ -26,6 +31,14 @@ const AddCategoryPopup = ({ setIsOpen }) => {
         setCategoryName('');
         setIsOpen(false);
     };
+
+
+        useEffect(() => {
+            if (!user) {
+                return navigate("/login");
+            }
+        }, [user, navigate]);
+    
 
 
     return (
