@@ -236,6 +236,7 @@ export const getProduct = async (req, res) => {
 
     if (!product) throw new Error("product not found...❌");
 
+
     res.status(200).json({
       message: "All products fetched successfully.",
       data: product,

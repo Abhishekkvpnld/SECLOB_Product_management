@@ -11,17 +11,17 @@ import AddProductPopup from '../components/AddProduct';
 const ProductDescription = () => {
 
 
-  const navigate = useNavigate();
   const { id: productId } = useParams();
   const user = useSelector((state) => state?.auth?.user)
+  const navigate = useNavigate()
 
-
-  const [product, setProduct] = useState([]);
+  const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(false);
   const [imgIndex, setImgIndex] = useState(0)
   const [selectedVariant, setSelectedVariant] = useState({});
   const [updateProduct, setUpdateProduct] = useState(false)
+
 
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
@@ -32,7 +32,7 @@ const ProductDescription = () => {
     try {
       const res = await axios.post(
         favoriteToggle_api,
-        { productId: product[0]?._id },
+        { productId: product?._id },
         { withCredentials: true }
       );
 
@@ -40,7 +40,7 @@ const ProductDescription = () => {
         if (res?.data?.data && res?.data?.data.length > 0) {
           const isFav = res.data.data.some(
             (el) =>
-              el?.userId === user?._id && el?.productId === product[0]?._id
+              el?.userId === user?._id && el?.productId === product?._id
           );
           setIsFavorited(isFav);
         } else {
@@ -53,15 +53,12 @@ const ProductDescription = () => {
     }
   };
 
-
-
-
   const checkFavoriteStatus = async () => {
     try {
       const res = await axios.get(favoriteProduct_api, { withCredentials: true });
       if (res?.data?.success) {
         const isFav = res?.data?.data?.some(
-          (el) => el?.userId === user?._id && el?.productId === product[0]?._id
+          (el) => el?.userId === user?._id && el?.productId === product?._id
         );
         setIsFavorited(isFav);
       }
@@ -75,7 +72,8 @@ const ProductDescription = () => {
     try {
       const res = await axios.get(`${getProduct_api}/${productId}`, { withCredentials: true });
       if (res?.data?.success) {
-        setProduct(res?.data?.data)
+
+        setProduct(res?.data?.data);
       }
     } catch (error) {
       console.log(error)
@@ -87,22 +85,16 @@ const ProductDescription = () => {
   }, []);
 
   useEffect(() => {
-    if (product[0]?._id && user?._id) {
+    if (product?._id && user?._id) {
       checkFavoriteStatus();
     }
   }, [product, user]);
 
 
   useEffect(() => {
-    setSelectedVariant(product[0]?.variants[0])
+    setSelectedVariant(product?.variants[0])
   }, []);
 
-
-  useEffect(() => {
-    if (!user) {
-      navigate("/login");
-    }
-  }, [user, navigate]);
 
 
   return (
@@ -131,7 +123,7 @@ const ProductDescription = () => {
             {/* Main Image */}
             <div className="bg-white rounded-2xl border border-gray-200 p-8 aspect-square flex items-center justify-center max-w-[90%]">
               <img
-                src={product[0]?.images[imgIndex]}
+                src={product?.images[imgIndex]}
                 alt="img"
                 className="max-w-[80%] max-h-[80%] object-cover rounded-lg  transform bg-blend-multiply"
               />
@@ -140,21 +132,22 @@ const ProductDescription = () => {
 
 
             {/* Thumbnail Images */}
-            <div className="flex space-x-4 overflow-x-scroll hide-scrollbar">
-              {product[0]?.images?.map((img, index) => (
+            <div className="flex space-x-4 overflow-x-auto hide-scrollbar scroll-smooth py-2">
+              {product?.images?.map((img, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-lg border border-gray-200 p-4 w-24 h-24 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors overflow-x-scroll hide-scrollbar"
+                  onClick={() => setImgIndex(index)}
+                  className="bg-white rounded-lg border border-gray-200 p-4 w-24 h-24 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors shrink-0"
                 >
                   <img
                     src={img}
-                    onClick={() => setImgIndex(index)}
                     alt={`Uploaded ${index + 1}`}
-                    className="w-16 h-12 object-cover rounded transform"
+                    className="w-16 h-12 object-cover rounded"
                   />
                 </div>
               ))}
             </div>
+
 
 
           </div>
@@ -164,8 +157,8 @@ const ProductDescription = () => {
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product[0]?.productName}</h1>
-              {selectedVariant && <div className="text-3xl font-bold text-gray-900 mb-4">${selectedVariant?.price}.00</div>}
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product?.productName}</h1>
+              {selectedVariant && <div className="text-3xl font-bold text-gray-900 mb-4"> ₹{selectedVariant?.price}.00</div>}
 
               <div className="flex items-center space-x-2 mb-2">
                 <span className="text-gray-600">Availability:</span>
@@ -185,7 +178,7 @@ const ProductDescription = () => {
             <div>
               <label className="block text-gray-700 font-medium mb-3">Ram:</label>
               <div className="flex space-x-2">
-                {product[0]?.variants.map((variant, index) => (
+                {product?.variants?.map((variant, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedVariant(variant)}
@@ -246,7 +239,7 @@ const ProductDescription = () => {
       </div>
 
 
-      {updateProduct && <AddProductPopup isOpen={updateProduct} product={product[0]} isUpdate={true} setIsOpen={setUpdateProduct} />}
+      {updateProduct && <AddProductPopup isOpen={updateProduct} product={product} isUpdate={true} setIsOpen={setUpdateProduct} />}
     </div>
   );
 }
